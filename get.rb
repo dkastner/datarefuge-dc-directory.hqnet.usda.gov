@@ -24,23 +24,29 @@ departments = all('#cboAgency option').map(&:text)
 FileUtils.mkdir_p 'data'
 
 CSV.open 'data/directory.csv', 'w' do |csv|
+  first_row = true
+
   departments.each do |department|
     next if department == ''
 
     select department
     click_button 'Locate'
 
-    first_row = true
     all('#header tr', visible: true).each do |row|
       begin
         if first_row
           csv << ['Last Name', 'First Name', 'MI', 'Phone Number', 'Agency', 'Room', 'Building', 'Department']
           first_row = false
         else
+          next if row['class'] == 'header_row'
+
           tds = row.all('td')
-          if tds.length > 1
-            csv << tds.map(&:text).map(&:strip).reject { |td| td.length == 0 } + [department]
-          end
+          next unless tds.length > 1
+
+          fields = tds.map(&:text).map(&:strip)
+          fields.shift
+
+          csv << fields + [department]
         end
       rescue => e
         binding.pry
